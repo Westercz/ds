@@ -1,0 +1,68 @@
+#Есть рабочий софт с поддержкой прокси и многопоточности, нельзя добавить туда еще один функционал используя основу .или переделать один из файлов например Inviter:
+# Добавить функцию который будет считать текстовый файл с указанием времени и ид канала 
+
+from datetime import datetime
+import time
+
+# ...
+
+class Inviter(DiscordTower):
+    # ... (ваш существующий код)
+
+    def schedule_voice_channel_actions(self, file_path: str):
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+
+            for line in lines:
+                channel_id, entry_time, exit_time = line.strip().split('?')
+                entry_hour, entry_minute = map(int, entry_time.split(':'))
+                exit_hour, exit_minute = map(int, exit_time.split(':'))
+
+                while True:
+                    current_time = datetime.now().time()
+                    if (current_time.hour == entry_hour and current_time.minute == entry_minute):
+                        self.join_voice_channel(channel_id)
+                    elif (current_time.hour == exit_hour and current_time.minute == exit_minute):
+                        self.leave_voice_channel(channel_id)
+                        break
+                    time.sleep(60)  # Проверяем каждую минуту
+
+    def join_voice_channel(self, channel_id: str):
+        # Код для присоединения к голосовому каналу с использованием API Discord
+        pass
+
+    def leave_voice_channel(self, channel_id: str):
+        # Код для выхода из голосового канала с использованием API Discord
+        pass
+
+# добавим методы join_voice_channel и leave_voice_channel в класс Inviter, используя библиотеку discord.py
+
+pip install discord.py
+
+# методы для работы с голосовыми каналами в ваш класс Inviter:
+import discord
+
+class Inviter(DiscordTower):
+    # ... (ваш существующий код)
+
+    async def join_voice_channel(self, channel_id: str):
+        try:
+            channel = self.client.get_channel(int(channel_id))
+            if channel and isinstance(channel, discord.VoiceChannel):
+                await channel.connect()
+                print(f"Bot joined voice channel: {channel.name}")
+        except Exception as e:
+            print(f"Error joining voice channel: {e}")
+
+    async def leave_voice_channel(self, channel_id: str):
+        try:
+            channel = self.client.get_channel(int(channel_id))
+            if channel and isinstance(channel, discord.VoiceChannel):
+                voice = discord.utils.get(self.client.voice_clients, guild=channel.guild)
+                if voice and voice.channel.id == channel.id:
+                    await voice.disconnect()
+                    print(f"Bot left voice channel: {channel.name}")
+        except Exception as e:
+            print(f"Error leaving voice channel: {e}")
+
+
